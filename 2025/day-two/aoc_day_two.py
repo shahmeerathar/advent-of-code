@@ -21,8 +21,27 @@ def is_invalid_part_a(id):
 
 
 def is_invalid_part_b(id):
-    x = re.search(r"^(.+)\1+$", id)
-    return x is not None
+    use_regex = False
+
+    if use_regex:
+        x = re.search(r"^(.+)\1+$", id)
+        return x is not None
+    else:
+        # k = bucket size
+        for k in range(1, len(id) // 2 + 1):
+            if len(id) % k != 0:
+                # buckets not all equally sized
+                continue
+            valid = False
+            for n in range(len(id) // k):
+                # iterate over buckets
+                if id[n * k : n * k + k] != id[:k]:
+                    valid = True
+                    break
+            if not valid:
+                return True
+
+        return False
 
 
 def get_solution(ranges):
