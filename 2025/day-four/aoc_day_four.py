@@ -1,17 +1,22 @@
+import copy
+
+
 def process_inputs():
     layout = []
     with open("input.txt", "r") as file:
         for line in file:
             row = [c for c in line.strip()]
-            print(row)
             layout.append(row)
 
     return layout
 
 
-def get_solution(layout):
-    part_a = 0
-    part_b = 0
+def move_rolls(layout):
+    rolls_moved = 0
+    new_layout = copy.deepcopy(layout)
+
+    for row in layout:
+        print(row)
 
     for y in range(len(layout)):
         for x in range(len(layout[0])):
@@ -33,9 +38,22 @@ def get_solution(layout):
                     if layout[adjacent_pos[0]][adjacent_pos[1]] == "@":
                         num_surrounding_rolls += 1
 
-            print("{} {} {}".format(y, x, num_surrounding_rolls))
             if num_surrounding_rolls < 4:
-                part_a += 1
+                new_layout[y][x] = "x"
+                rolls_moved += 1
+
+    print("Moved {} rolls".format(rolls_moved))
+    return rolls_moved, new_layout
+
+
+def get_solution(layout):
+    part_a, layout = move_rolls(layout)
+    part_b = part_a
+    while True:
+        delta, layout = move_rolls(layout)
+        if delta == 0:
+            break
+        part_b += delta
 
     return (part_a, part_b)
 
