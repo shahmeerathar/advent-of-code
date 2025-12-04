@@ -1,6 +1,3 @@
-import copy
-
-
 def process_inputs():
     layout = set()
     with open("input.txt", "r") as file:
@@ -14,7 +11,7 @@ def process_inputs():
 
 def move_rolls(layout: set):
     rolls_moved = 0
-    new_layout = copy.deepcopy(layout)
+    new_layout = set()
 
     for y, x in layout:
         num_surrounding_rolls = 0
@@ -26,8 +23,9 @@ def move_rolls(layout: set):
                 if (y + dy, x + dx) in layout:
                     num_surrounding_rolls += 1
 
-        if num_surrounding_rolls < 4:
-            new_layout.remove((y, x))
+        if num_surrounding_rolls >= 4:
+            new_layout.add((y, x))
+        else:
             rolls_moved += 1
 
     print("Moved {} rolls".format(rolls_moved))
