@@ -1,2 +1,2 @@
-input.txt
-input2.txt
+input*.txt
+.direnv
