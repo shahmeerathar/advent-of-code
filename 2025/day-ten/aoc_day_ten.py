@@ -1,4 +1,6 @@
+import numpy as np
 from tqdm import tqdm
+from scipy.optimize import linprog
 
 
 def process_inputs():
@@ -42,35 +44,25 @@ def min_presses_lights(data):
         minimum += 1
 
 
-def helper_joltages(state, expected, buttons, depth):
-    if depth == 0:
-        return state == expected
-
-    possible = False
-    for button in buttons:
-        new_state = state.copy()
-        for joltage in button:
-            new_state[joltage] += 1
-        exceeds = False
-        for a, b in zip(new_state, expected):
-            if a > b:
-                exceeds = True
-                break
-        if exceeds:
-            continue
-        possible = possible or helper_joltages(new_state, expected, buttons, depth - 1)
-
-    return possible
-
-
 def min_presses_joltages(data):
-    minimum = 1
-    while True:
-        possible = helper_joltages([0] * len(data[0]), data[2], data[1], minimum)
-        if possible:
-            return minimum
+    buttons = data[1]
+    joltages = data[2]
 
-        minimum += 1
+    m = len(joltages)
+    n = len(buttons)
+
+    A = np.zeros((m, n))
+    for col, button in enumerate(buttons):
+        vec = np.zeros(m)
+        for b in button:
+            vec[b] = 1
+        A[:, col] = vec
+
+    b = np.array(joltages)
+    c = np.ones(n)
+
+    prog = linprog(c, A_eq=A, b_eq=b, integrality=1)
+    return np.sum(prog.x).astype(int)
 
 
 def get_solution(inputs):
