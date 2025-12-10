@@ -1,9 +1,4 @@
 import itertools
-import math
-import numpy as np
-from tqdm import tqdm
-from scipy import ndimage
-from pathlib import Path
 
 
 def process_inputs():
@@ -14,37 +9,56 @@ def process_inputs():
     return reds
 
 
-def get_solution(reds: list[tuple[int, int]]):
-    part_a = 0
-    part_b = 0
+def rectangle_contained(r1, r2, reds):
+    top_left = [min(r1[0], r2[0]), min(r1[1], r2[1])]
+    bottom_right = [max(r1[0], r2[0]), max(r1[1], r2[1])]
 
+    for l1, l2 in itertools.pairwise(reds + [reds[0]]):
+        if l1[0] == l2[0]:
+            # Column line - check rect rows
+            if l1[0] <= top_left[0] or l1[0] >= bottom_right[0]:
+                continue
+
+            top = min(l1[1], l2[1])
+            bottom = max(l1[1], l2[1])
+
+            if (top < top_left[1] and bottom == top_left[1]) or (
+                top == bottom_right[1] and bottom > bottom_right[1]
+            ):
+                continue
+
+            if (top <= top_left[1] and bottom >= top_left[1]) or (
+                top <= bottom_right[1] and bottom >= bottom_right[1]
+            ):
+                return False
+        else:
+            # Row line - check rect cols
+            if l1[1] <= top_left[1] or l1[1] >= bottom_right[1]:
+                continue
+
+            left = min(l1[0], l2[0])
+            right = max(l1[0], l2[0])
+
+            if (left < top_left[0] and right == top_left[0]) or (
+                left == bottom_right[0] and right > bottom_right[0]
+            ):
+                continue
+
+            if (left <= top_left[0] and right >= top_left[0]) or (
+                left <= bottom_right[0] and right >= bottom_right[0]
+            ):
+                return False
+
+    return True
+
+
+def get_solution(reds: list[tuple[int, int]]):
     dimensions = [max([n[0] for n in reds]) + 1, max([n[1] for n in reds]) + 1]
     print("Dimensions: {}x{}".format(*dimensions))
 
-    # Build outline
-    print("Building outline")
-    grid = np.zeros(dimensions)
-    for p1, p2 in itertools.pairwise(reds + [reds[0]]):
-        if p1[0] == p2[0]:
-            start, end = min(p1[1], p2[1]), max(p1[1], p2[1])
-            grid[p1[0], start : end + 1] = 1
-        if p1[1] == p2[1]:
-            start, end = min(p1[0], p2[0]), max(p1[0], p2[0])
-            grid[start : end + 1, p1[1]] = 1
-
-    # Fill in
-    print("Filling in")
-    file = "filled.npy"
-    if Path(file).exists():
-        print("Loading file")
-        filled = np.load(file)
-    else:
-        filled = ndimage.binary_fill_holes(grid).astype(int)
-        np.save(file, filled)
-
     max_area = 0
     rects = []
-    for p1, p2 in tqdm(itertools.combinations(reds, 2), total=math.comb(len(reds), 2)):
+    for p1, p2 in itertools.combinations(reds, 2):
         width = abs(p2[0] - p1[0]) + 1
         height = abs(p2[1] - p1[1]) + 1
         area = width * height
@@ -53,19 +67,12 @@ def get_solution(reds: list[tuple[int, int]]):
 
     max_enclosed_area = 0
     rects.sort(key=lambda x: x[2], reverse=True)
-    for p1, p2, area in tqdm(rects):
-        top_left = [min(p1[0], p2[0]), min(p1[1], p2[1])]
-        bottom_right = [max(p1[0], p2[0]), max(p1[1], p2[1])]
-        rect = filled[
-            top_left[0] : bottom_right[0] + 1, top_left[1] : bottom_right[1] + 1
-        ]
-        if np.all(rect == 1):
+    for p1, p2, area in rects:
+        if rectangle_contained(p1, p2, reds):
             max_enclosed_area = area
             break
 
-    part_a = max_area
-    part_b = max_enclosed_area
-    return part_a, part_b
+    return max_area, max_enclosed_area
 
 
 if __name__ == "__main__":
